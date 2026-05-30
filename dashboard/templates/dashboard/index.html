@@ -1,102 +1,225 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8"><title>HR Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise HR Panel</title>
     <style>
-        body { font-family: sans-serif; background: #f8fafc; margin: 0; display: flex; height: 100vh; }
-        aside { width: 240px; background: #0f172a; color: white; padding: 1.5rem; box-sizing: border-box; }
-        main { flex: 1; padding: 2rem; overflow-y: auto; box-sizing: border-box; }
-        .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-top: 1.5rem; }
-        .card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        input, select, button.save-btn { width: 100%; padding: 0.6rem; margin-top: 0.4rem; margin-bottom: 1rem; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box; }
-        button.save-btn { background: #2563eb; color: white; border: none; font-weight: bold; cursor: pointer; }
-        table { width: 100%; border-collapse: collapse; background: white; margin-top: 1rem; }
-        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #e2e8f0; }
-        th { background: #f1f5f9; }
-        .metrics { display: flex; gap: 1rem; margin-top: 1rem; }
-        .metric-box { background: #e2e8f0; padding: 1rem; border-radius: 6px; flex: 1; }
-        .logout-link { color: #f87171; text-decoration: none; display: block; margin-top: 2rem; }
+        :root {
+            --bg-main: #f1f5f9;
+            --sidebar-bg: #0f172a;
+            --card-bg: #ffffff;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            
+            /* Dept Badge Colors */
+            --dept-hr: #fef3c7; --text-hr: #b45309;
+            --dept-eng: #dcfce7; --text-eng: #15803d;
+            --dept-design: #f3e8ff; --text-design: #7e22ce;
+            --dept-mktg: #e0f2fe; --text-mktg: #0369a1;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: var(--bg-main); color: var(--text-dark); display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar Navigation Layout */
+        aside { width: 260px; background: var(--sidebar-bg); color: white; padding: 2rem 1.5rem; display: flex; flex-direction: column; justify-content: space-between; }
+        .brand-heading { font-size: 1.4rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; letter-spacing: -0.5px; }
+        .nav-links { margin-top: 2.5rem; display: flex; flex-direction: column; gap: 0.5rem; flex: 1; }
+        .nav-item { display: flex; align-items: center; padding: 0.8rem 1rem; color: #94a3b8; text-decoration: none; border-radius: 8px; font-weight: 500; transition: all 0.2s ease; }
+        .nav-item:hover, .nav-item.active { background: rgba(255, 255, 255, 0.08); color: white; }
+        .logout-btn { color: #f87171; background: rgba(248, 113, 113, 0.1); justify-content: center; font-weight: 600; border: none; cursor: pointer; width: 100%; padding: 0.8rem; border-radius: 8px; }
+        .logout-btn:hover { background: #ef4444; color: white; }
+
+        /* Main Workspace Container */
+        main { flex: 1; padding: 2.5rem; overflow-y: auto; }
+        .header-wrapper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .header-title h1 { font-size: 1.8rem; font-weight: 700; color: var(--text-dark); }
+        .header-title p { color: var(--text-muted); font-size: 0.95rem; margin-top: 0.2rem; }
+
+        /* Analytics Metric Row Cards */
+        .metrics-container { display: flex; gap: 1.5rem; margin-bottom: 2rem; }
+        .metric-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 1.5rem; border-radius: 12px; flex: 1; display: flex; flex-direction: column; gap: 0.4rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+        .metric-card h4 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
+        .metric-card h3 { font-size: 2rem; font-weight: 700; color: var(--text-dark); }
+
+        /* Core Structure Splitting Grid */
+        .dashboard-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 2rem; align-items: start; }
+        .panel-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.75rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .panel-card h3 { font-size: 1.2rem; font-weight: 600; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; }
+
+        /* Search Bar & Table Utilities */
+        .search-wrapper { position: relative; margin-bottom: 1.25rem; }
+        .search-input { width: 100%; padding: 0.8rem 1rem; border: 1px solid var(--border-color); border-radius: 10px; font-size: 0.95rem; background: #f8fafc; transition: all 0.2s ease; }
+        .search-input:focus { outline: none; border-color: var(--primary); background: white; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
+
+        /* Modernized Data Presentation Grid Table */
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { padding: 1rem; font-weight: 600; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; background: #f8fafc; border-bottom: 1px solid var(--border-color); }
+        td { padding: 1rem; font-size: 0.95rem; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+        tr:hover td { background: #f8fafc; }
+
+        /* Department Dynamic Badge Framework Pills */
+        .badge { display: inline-block; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600; text-align: center; }
+        .badge-hr { background: var(--dept-hr); color: var(--text-hr); }
+        .badge-engineering { background: var(--dept-eng); color: var(--text-eng); }
+        .badge-design { background: var(--dept-design); color: var(--text-design); }
+        .badge-marketing { background: var(--dept-mktg); color: var(--text-mktg); }
+
+        /* Management Operational Action Buttons */
+        .action-icon-btn { background: none; border: none; cursor: pointer; font-size: 1.1rem; padding: 0.25rem; border-radius: 4px; transition: background 0.2s; text-decoration: none; display: inline-block; }
+        .action-icon-btn:hover { background: rgba(0,0,0,0.05); }
+
+        /* Interactive Dynamic Form Controls */
+        label { display: block; font-size: 0.88rem; font-weight: 500; color: #475569; margin-bottom: 0.4rem; }
+        .form-control { width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.95rem; margin-bottom: 1.25rem; transition: border-color 0.2s; }
+        .form-control:focus { outline: none; border-color: var(--primary); }
+        .form-control:disabled { background: #e2e8f0; cursor: not-allowed; }
+        
+        .submit-action-btn { width: 100%; padding: 0.8rem; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        .submit-action-btn:hover { background: var(--primary-hover); }
+        .cancel-link { display: block; text-align: center; margin-top: 0.75rem; font-size: 0.9rem; color: var(--text-muted); text-decoration: none; }
+        .cancel-link:hover { color: var(--text-dark); }
+        
+        .alert-error { background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1.25rem; font-size: 0.9rem; }
     </style>
 </head>
 <body>
 
     <aside>
-        <h2>💼 HR Admin</h2>
-        <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 2rem;">User: {{ username }}</p>
-        <a href="{% url 'dashboard_home' %}" style="color: white; text-decoration: none; display:block; margin-bottom:1rem;">🔍 Employee Table</a>
-        <a href="{% url 'logout' %}" class="logout-link">🚪 Log Out</a>
+        <div>
+            <div class="brand-heading">💼 HR Workspace</div>
+            <nav class="nav-links">
+                <a href="{% url 'dashboard_home' %}" class="nav-item active">📁 Employee Database</a>
+                <p style="margin-top: 1.5rem; font-size: 0.75rem; text-transform: uppercase; color: #475569; letter-spacing: 0.5px; font-weight: bold; padding-left: 1rem;">System User</p>
+                <div class="nav-item" style="cursor: default; color: white;">👤 {{ username }}</div>
+            </nav>
+        </div>
+        <form action="{% url 'logout' %}" method="POST" style="width: 100%;">
+            {% csrf_token %}
+            <button type="submit" class="logout-btn">Log Out Engine</button>
+        </form>
     </aside>
 
     <main>
-        <h1>Corporate Directory <span style="font-size:1rem;"></span></h1>
-        
-        <div class="metrics">
-            <div class="metric-box"><h4>Total Staff</h4><h3>{{ total_count }}</h3></div>
-            <div class="metric-box"><h4>Departments</h4><h3>{{ distinct_depts }}</h3></div>
+        <div class="header-wrapper">
+            <div class="header-title">
+                <h1>Personnel Management System</h1>
+                <p>Monitor corporate profiles, database records, and onboarding tracks.</p>
+            </div>
         </div>
 
-        <div class="grid">
-            <div class="card">
-                <form method="GET" action="">
-                    <input type="text" name="search" value="{{ search_query }}" placeholder="🔍 Filter list by name or department...">
-                </form>
+        <div class="metrics-container">
+            <div class="metric-card">
+                <h4>Total Active Headcount</h4>
+                <h3>{{ total_count }}</h3>
+            </div>
+            <div class="metric-card">
+                <h4>Registered Functional Org Departments</h4>
+                <h3>{{ distinct_depts }}</h3>
+            </div>
+            <div class="metric-card">
+                <h4>Core Environment State</h4>
+                <h3 style="color: #10b981; font-size: 1.25rem; margin-top: 0.6rem; display: flex; align-items: center; gap: 5px;">● Connected Session Cache</h3>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="panel-card">
+                <div class="search-wrapper">
+                    <form method="GET" action="">
+                        <input type="text" name="search" class="search-input" value="{{ search_query }}" placeholder="🔍 Quick filter by typing Name, Role, Department or ID code...">
+                    </form>
+                </div>
+
                 <table>
                     <thead>
-                        <tr><th>ID</th><th>Name</th><th>Role</th><th>Department</th><th>Email</th><th>Actions</th></tr>
+                        <tr>
+                            <th>ID</th>
+                            <th>Identity Name</th>
+                            <th>Job Role / Title</th>
+                            <th>Department</th>
+                            <th>Actions</th>
+                        </tr>
                     </thead>
                     <tbody>
                         {% for emp in employees %}
                         <tr>
-                            <td><strong>{{ emp.employee_id }}</strong></td>
-                            <td>{{ emp.name }}</td>
-                            <td>{{ emp.role }}</td>
-                            <td>{{ emp.department }}</td>
-                            <td>{{ emp.email }}</td>
+                            <td><span style="font-family: monospace; font-weight: bold; color: #475569;">{{ emp.employee_id }}</span></td>
                             <td>
-                                <a href="?edit_id={{ emp.employee_id }}" style="color: #2563eb; text-decoration:none; font-weight:bold; margin-right:5px;">📝</a>
-                                <form method="POST" style="display:inline;">
+                                <div style="font-weight: 600; color: var(--text-dark);">{{ emp.name }}</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">{{ emp.email }}</div>
+                            </td>
+                            <td>{{ emp.role }}</td>
+                            <td>
+                                {% if emp.department == "Human Resources" %}
+                                    <span class="badge badge-hr">Human Resources</span>
+                                {% elif emp.department == "Engineering" %}
+                                    <span class="badge badge-engineering">Engineering</span>
+                                {% elif emp.department == "Design" %}
+                                    <span class="badge badge-design">Design</span>
+                                {% else %}
+                                    <span class="badge badge-marketing">Marketing</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="?edit_id={{ emp.employee_id }}" class="action-icon-btn" title="Edit Profile">📝</a>
+                                <form method="POST" style="display:inline;" onsubmit="return confirm('Permanently drop this profile record?');">
                                     {% csrf_token %}
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="employee_id" value="{{ emp.employee_id }}">
-                                    <button type="submit" style="background:none; border:none; cursor:pointer; color:#ef4444; font-weight:bold; padding:0;">❌</button>
+                                    <button type="submit" class="action-icon-btn" style="color: #ef4444;" title="Delete Profile">❌</button>
                                 </form>
                             </td>
                         </tr>
                         {% empty %}
-                        <tr><td colspan="6" style="text-align: center; color: #64748b;">No personnel records found.</td></tr>
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">No active workforce profiles match your query filters.</td>
+                        </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
 
-            <div class="card">
-                <h3>{% if edit_emp %}📝 Edit Profile: {{ edit_emp.employee_id }}{% else %}➕ Onboard Employee{% endif %}</h3>
-                <form method="POST" style="margin-top: 1rem;">
+            <div class="panel-card">
+                <h3>{% if edit_emp %}📝 Edit Employee Profile{% else %}➕ Onboard New Personnel{% endif %}</h3>
+                
+                {% if error_msg %}
+                    <div class="alert-error">⚠️ {{ error_msg }}</div>
+                {% endif %}
+
+                <form method="POST">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="save">
+                    <input type="hidden" name="form_mode" value="{% if edit_emp %}EDIT{% else %}CREATE{% endif %}">
                     
-                    <label>Employee ID</label>
-                    <input type="text" name="employee_id" value="{% if edit_emp %}{{ edit_emp.employee_id }}{% endif %}" {% if edit_emp %}readonly style="background:#e2e8f0;"{% else %}required{% endif %}>
+                    <label>Employee Unique ID</label>
+                    <input type="text" name="employee_id" class="form-control" placeholder="Leave blank to auto-generate (e.g. EMP003)" value="{% if edit_emp %}{{ edit_emp.employee_id }}{% endif %}" {% if edit_emp %}readonly{% endif %}>
                     
                     <label>Full Name</label>
-                    <input type="text" name="name" value="{% if edit_emp %}{{ edit_emp.name }}{% endif %}" required>
+                    <input type="text" name="name" class="form-control" value="{% if edit_emp %}{{ edit_emp.name }}{% endif %}" required placeholder="e.g. John Doe">
                     
-                    <label>Job Title</label>
-                    <input type="text" name="role" value="{% if edit_emp %}{{ edit_emp.role }}{% endif %}" required>
+                    <label>Corporate Job Title</label>
+                    <input type="text" name="role" class="form-control" value="{% if edit_emp %}{{ edit_emp.role }}{% endif %}" required placeholder="e.g. Lead Developer">
                     
-                    <label>Department Selection</label>
-                    <select name="department">
+                    <label>Allocated Department Apportionment</label>
+                    <select name="department" class="form-control">
                         <option {% if edit_emp.department == "Human Resources" %}selected{% endif %}>Human Resources</option>
                         <option {% if edit_emp.department == "Engineering" %}selected{% endif %}>Engineering</option>
                         <option {% if edit_emp.department == "Design" %}selected{% endif %}>Design</option>
                         <option {% if edit_emp.department == "Marketing" %}selected{% endif %}>Marketing</option>
                     </select>
                     
-                    <label>Corporate Email</label>
-                    <input type="email" name="email" value="{% if edit_emp %}{{ edit_emp.email }}{% endif %}" required>
+                    <label>Corporate Email Communication Channel</label>
+                    <input type="email" name="email" class="form-control" value="{% if edit_emp %}{{ edit_emp.email }}{% endif %}" required placeholder="name@company.com">
                     
-                    <button type="submit" class="save-btn">{% if edit_emp %}Apply Updates{% else %}Save Entry{% endif %}</button>
-                    {% if edit_emp %}<a href="{% url 'dashboard_home' %}" style="display:block; text-align:center; color:#64748b; font-size:0.9rem;">Cancel Edit</a>{% endif %}
+                    <button type="submit" class="submit-action-btn">{% if edit_emp %}Commit Updates{% else %}Execute Onboarding{% endif %}</button>
+                    {% if edit_emp %}
+                        <a href="{% url 'dashboard_home' %}" class="cancel-link">Discard Changes</a>
+                    {% endif %}
                 </form>
             </div>
         </div>

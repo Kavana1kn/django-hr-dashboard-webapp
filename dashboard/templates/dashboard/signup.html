@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Access Authentication</title>
+    <title>Create System Account</title>
     <style>
         :root {
             --bg: #0f172a;
             --card-bg: #1e293b;
-            --primary: #2563eb;
-            --primary-hover: #1d4ed8;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
             --border: #334155;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
@@ -17,14 +17,16 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
         body { background-color: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; color: var(--text-main); }
         
-        .auth-container { background: var(--card-bg); border: 1px solid var(--border); width: 100%; max-width: 400px; padding: 2.5rem; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); }
+        .auth-container { background: var(--card-bg); border: 1px solid var(--border); width: 100%; max-width: 420px; padding: 2.5rem; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); }
         .auth-header { margin-bottom: 2rem; text-align: center; }
         .auth-header h2 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem; }
         .auth-header p { color: var(--text-muted); font-size: 0.9rem; }
         
         label { display: block; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
         .form-control { width: 100%; padding: 0.8rem 1rem; background: #0f172a; border: 1px solid var(--border); border-radius: 8px; color: white; font-size: 0.95rem; margin-bottom: 1.25rem; transition: all 0.2s; }
-        .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
+        .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
+        
+        .hint { font-size: 0.8rem; color: var(--text-muted); margin-top: -1rem; margin-bottom: 1.25rem; display: block; }
         
         .btn-submit { width: 100%; padding: 0.85rem; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 0.5rem; }
         .btn-submit:hover { background: var(--primary-hover); }
@@ -40,8 +42,8 @@
 
     <div class="auth-container">
         <div class="auth-header">
-            <h2>Account Login</h2>
-            <p>Access your enterprise control dashboard</p>
+            <h2>Sign Up</h2>
+            <p>Create your internal operational account</p>
         </div>
 
         {% if error %}
@@ -52,16 +54,25 @@
             {% csrf_token %}
             
             <label for="username">Username</label>
-            <input type="text" id="username" name="username" class="form-control" required autocomplete="on" pattern="^[a-zA-Z0-9]+$">
-            
+            <!-- Pattern forces Alphanumeric string execution inputs across UI -->
+            <input type="text" id="username" name="username" class="form-control" 
+                   required autocomplete="off" pattern="^[a-zA-Z0-9]+$"
+                   title="Alphanumeric entries only. No spaces or special characters allowed.">
+            <span class="hint">Letters and numbers only. No special characters.</span>
+
             <label for="password">Password</label>
-            <input type="password" id="password" name="password" class="form-control" required>
-            
-            <button type="submit" class="btn-submit">Sign In</button>
+            <input type="password" id="password" name="password" class="form-control" 
+                   required pattern=".*[0-9].*" title="Must contain at least one number (0-9).">
+            <span class="hint">Must contain at least 1 numerical digit.</span>
+
+            <label for="confirm_password">Confirm Password</label>
+            <input type="password" id="confirm_password" name="confirm_password" class="form-control" required>
+
+            <button type="submit" class="btn-submit">Register Account</button>
         </form>
 
         <div class="switch-prompt">
-            Don't have an execution profile? <a href="{% url 'signup' %}">Sign Up</a>
+            Already have an account? <a href="{% url 'login' %}">Log In</a>
         </div>
     </div>
 
