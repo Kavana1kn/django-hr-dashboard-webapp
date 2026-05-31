@@ -56,9 +56,9 @@
             <label for="username">Username</label>
             <!-- Pattern forces Alphanumeric string execution inputs across UI -->
             <input type="text" id="username" name="username" class="form-control" 
-                   required autocomplete="off" pattern="^[a-zA-Z0-9]+$"
-                   title="Alphanumeric entries only. No spaces or special characters allowed.">
-            <span class="hint">Letters and numbers only. No special characters.</span>
+                   required autocomplete="off" pattern="^[a-zA-Z0-9_]+$"
+                   title="Letters, numbers, and underscores only.">
+            <span class="hint">Letters, numbers, and underscores only.</span>
 
             <label for="password">Password</label>
             <input type="password" id="password" name="password" class="form-control" 
@@ -66,7 +66,7 @@
             <span class="hint">Must contain at least 1 numerical digit.</span>
 
             <label for="confirm_password">Confirm Password</label>
-            <input type="password" id="confirm_password" name="confirm_password" class="form-control" required>
+            <input type="password" id="confirms_password" name="confirm_password" class="form-control" required>
 
             <button type="submit" class="btn-submit">Register Account</button>
         </form>

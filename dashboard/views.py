@@ -6,8 +6,8 @@ from django.contrib.auth.decorators import login_required
 
 # Simulated persistence mock data layer for the internal grid dashboard
 DEMO_DATA = [
-    {"employee_id": "EMP001", "name": "Alice Smith", "role": "HR Manager", "department": "Human Resources", "email": "alice@company.com"},
-    {"employee_id": "EMP002", "name": "Bob Jones", "role": "Software Engineer", "department": "Engineering", "email": "bob@company.com"},
+    {"employee_id": "EMP001", "name": "Smitha rao", "role": "HR Manager", "department": "Human Resources", "email": "smith@cognizant.com"},
+    {"employee_id": "EMP002", "name": "Jairaj tiwari", "role": "Software Engineer", "department": "Engineering", "email": "jairaj@cognizant.com"},
 ]
 
 def signup_view(request):
@@ -19,9 +19,9 @@ def signup_view(request):
         password = request.POST.get('password', '')
         confirm_password = request.POST.get('confirm_password', '')
 
-        # 1. Username Regex Validation (Alphanumeric only, no special characters)
-        if not re.match(r'^[a-zA-Z0-9]+$', username):
-            return render(request, 'dashboard/signup.html', {'error': 'Username cannot contain spaces or special characters.'})
+        # 1. Username Regex Validation (letters, numbers, underscores allowed)
+        if not re.match(r'^[a-zA-Z0-9_]+$', username):
+            return render(request, 'dashboard/signup.html', {'error': 'Username can include letters, numbers, and underscores only.'})
 
         # 2. Duplicate Account Check
         if User.objects.filter(username=username).exists():
@@ -52,7 +52,7 @@ def login_view(request):
         password = request.POST.get('password', '')
 
         # Validate Username pattern input on Login side
-        if not re.match(r'^[a-zA-Z0-9]+$', username):
+        if not re.match(r'^[a-zA-Z0-9_]+$', username):
             return render(request, 'dashboard/login.html', {'error': 'Invalid username format.'})
 
         user = authenticate(request, username=username, password=password)
