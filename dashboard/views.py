@@ -3,6 +3,8 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
+from .models import Employee
 
 # Simulated persistence mock data layer for the internal grid dashboard
 DEMO_DATA = [
@@ -72,73 +74,81 @@ def logout_view(request):
 
 @login_required(login_url='login')
 def dashboard_home(request):
-    # Ensure session data array exists securely
-    if 'employees' not in request.session:
-        request.session['employees'] = DEMO_DATA
+    # Initialize DB with demo data if empty
+    if Employee.objects.count() == 0:
+        for item in DEMO_DATA:
+            Employee.objects.create(
+                employee_id=item['employee_id'],
+                name=item['name'],
+                role=item.get('role', ''),
+                department=item.get('department', ''),
+                email=item.get('email', ''),
+            )
 
-    employees = request.session['employees']
-    search_query = request.GET.get('search', '').strip().lower()
+    search_query = request.GET.get('search', '').strip()
 
+    employees_qs = Employee.objects.all()
     if search_query:
-        employees = [
-            emp for emp in employees 
-            if search_query in emp['name'].lower() or 
-               search_query in emp['department'].lower() or 
-               search_query in emp['role'].lower() or
-               search_query in emp['employee_id'].lower()
-        ]
+        employees_qs = employees_qs.filter(
+            Q(name__icontains=search_query) |
+            Q(department__icontains=search_query) |
+            Q(role__icontains=search_query) |
+            Q(employee_id__icontains=search_query)
+        )
 
     edit_emp = None
     edit_id = request.GET.get('edit_id')
     if edit_id:
-        edit_emp = next((emp for emp in request.session['employees'] if emp['employee_id'] == edit_id), None)
+        edit_emp = Employee.objects.filter(employee_id=edit_id).first()
 
-    total_count = len(request.session['employees'])
-    distinct_depts = len(set(emp['department'] for emp in request.session['employees']))
+    total_count = Employee.objects.count()
+    distinct_depts = Employee.objects.values_list('department', flat=True).distinct().count()
 
     if request.method == "POST":
         action = request.POST.get('action')
         emp_id = request.POST.get('employee_id', '').strip()
-        current_list = request.session['employees']
 
         if action == "delete":
-            current_list = [emp for emp in current_list if emp['employee_id'] != emp_id]
-            request.session['employees'] = current_list
+            Employee.objects.filter(employee_id=emp_id).delete()
             return redirect('dashboard_home')
 
         elif action == "save":
             form_mode = request.POST.get('form_mode', 'CREATE')
-            
+
             if form_mode == 'CREATE' and not emp_id:
-                existing_ids = [int(emp['employee_id'].replace('EMP', '')) for emp in current_list if emp['employee_id'].startswith('EMP')]
+                existing_ids = [int(e.employee_id.replace('EMP', '')) for e in Employee.objects.filter(employee_id__startswith='EMP')]
                 next_id_num = max(existing_ids) + 1 if existing_ids else 1
                 emp_id = f"EMP{next_id_num:03d}"
-            elif form_mode == 'CREATE' and any(emp['employee_id'] == emp_id for emp in current_list):
+
+            if form_mode == 'CREATE' and Employee.objects.filter(employee_id=emp_id).exists():
                 return render(request, 'dashboard/index.html', {
-                    'employees': employees, 'edit_emp': edit_emp, 'error_msg': f"ID {emp_id} is already assigned!",
+                    'employees': employees_qs, 'edit_emp': edit_emp, 'error_msg': f"ID {emp_id} is already assigned!",
                     'total_count': total_count, 'distinct_depts': distinct_depts, 'username': request.user.username
                 })
 
-            payload = {
-                "employee_id": emp_id,
-                "name": request.POST.get('name', 'Unnamed Employee').strip(),
-                "role": request.POST.get('role', 'General Staff').strip(),
-                "department": request.POST.get('department'),
-                "email": request.POST.get('email', 'info@company.com').strip(),
-            }
+            name = request.POST.get('name', 'Unnamed Employee').strip()
+            role = request.POST.get('role', 'General Staff').strip()
+            department = request.POST.get('department', '').strip()
+            email = request.POST.get('email', 'info@company.com').strip()
 
-            current_list = [emp for emp in current_list if emp['employee_id'] != emp_id]
-            current_list.append(payload)
-            current_list.sort(key=lambda x: x['employee_id'])
-            request.session['employees'] = current_list
+            # Create or update the Employee record
+            obj, created = Employee.objects.update_or_create(
+                employee_id=emp_id,
+                defaults={
+                    'name': name,
+                    'role': role,
+                    'department': department,
+                    'email': email,
+                }
+            )
             return redirect('dashboard_home')
 
     context = {
-        'employees': employees,
+        'employees': employees_qs,
         'edit_emp': edit_emp,
         'search_query': request.GET.get('search', ''),
         'total_count': total_count,
         'distinct_depts': distinct_depts,
-        'username': request.user.username  # Read securely from authenticated request target
+        'username': request.user.username
     }
     return render(request, 'dashboard/index.html', context)
